@@ -10,8 +10,7 @@
             --success: #10b981;
             --danger: #ef4444;
             --gray: #f3f4f6;
-            --text-main: #1f2937; /* 強制主要字體為深灰色 */
-            --text-muted: #4b5563; /* 次要字體 */
+            --text-main: #1f2937; /* 強制所有主要文字為深灰色，避免隱形 */
         }
         body {
             font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
@@ -33,7 +32,7 @@
             margin: 2rem auto;
             padding: 0 1rem;
         }
-        /* 導覽籤頁（已優化字體顏色） */
+        /* 導覽籤頁樣式與字體優化 */
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -51,15 +50,15 @@
             font-size: 1.05rem;
             cursor: pointer;
             white-space: nowrap;
-            color: #4b5563 !important; /* 強制預設字體為深灰 */
+            color: #4b5563 !important; /* 確保未選中的標籤字體清晰 */
             font-weight: 600;
         }
         .tab-btn.active {
-            color: var(--primary) !important; /* 啟用時為亮眼藍色 */
+            color: var(--primary) !important; /* 選中時為深藍色 */
             border-bottom: 3px solid var(--primary);
             font-weight: bold;
         }
-        /* 區塊樣式 */
+        /* 區塊內頁樣式 */
         .panel {
             background: white;
             padding: 2rem;
@@ -90,7 +89,7 @@
             border: 2px solid #d1d5db;
             border-radius: 6px;
             box-sizing: border-box;
-            color: #111827 !important; /* 確保輸入進去的字是黑色的 */
+            color: #111827 !important; /* 確保員工輸入的字體是清晰黑字 */
             background-color: #ffffff;
             font-size: 1rem;
         }
@@ -99,7 +98,7 @@
             outline: none;
         }
         button {
-            color: #ffffff !important; /* 強制按鈕文字為白色 */
+            color: #ffffff !important; /* 強制所有按鈕文字為白色 */
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 6px;
@@ -113,7 +112,7 @@
         .btn-primary { background-color: var(--primary); }
         .btn-group { display: flex; gap: 1rem; margin-top: 1rem; }
         
-        /* 表格字體優化 */
+        /* 表格樣式與字體清晰度 */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -222,27 +221,39 @@
     </div>
 
     <script>
+        // 讀取您的試算表 CSV 網址
         const GOOGLE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRAkvGq_ZM5nxqB7oM2A0RYobjs9Cex0b-tzpTxAln5IoKr38iHHv8CywxHV_QjoTfWYHcFzs9JDfvj/pub?tqx=out:csv";
 
+        // 更新打卡時鐘
         setInterval(() => {
             const now = new Date();
             document.getElementById('current-time').innerText = "目前時間：" + now.toLocaleString();
         }, 1000);
 
+        // 切換籤頁
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+            
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            const targetPanel = document.getElementById(tabId);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+
             if(tabId === 'business') { loadBusinessData(); }
         }
 
+        // 打卡虛擬提示
         function doPunch(type) {
             const name = document.getElementById('punch-name').value;
             if(!name) return alert('請先輸入姓名！');
             alert(`【${name}】已於 ${new Date().toLocaleTimeString()} 成功${type}打卡！`);
         }
 
+        // 核心同步：讀取試算表函數
         function loadBusinessData() {
             fetch(GOOGLE_CSV_URL)
             .then(res => res.text())
@@ -250,16 +261,17 @@
                 const lines = data.split('\n').map(line => line.split(',').map(cell => cell.replace(/"/g, '').trim()));
                 const tbody = document.querySelector('#business-table tbody');
                 tbody.innerHTML = ''; 
+                
                 for(let i = 1; i < lines.length; i++) {
                     if(lines[i].length >= 7 && lines[i][1] !== "") {
                         const tr = document.createElement('tr');
+                        // 欄位順序：[1]姓名, [2]出差地點, [3]開始日期 [4]開始時間, [5]結束日期 [6]結束時間
                         tr.innerHTML = `<td>${lines[i][1]}</td><td>${lines[i][2]}</td><td>${lines[i][3]} ${lines[i][4]}</td><td>${lines[i][5]} ${lines[i][6]}</td>`;
                         tbody.appendChild(tr);
                     }
                 }
-            }).catch(err => console.error(err));
+            })
+            .catch(err => console.error("試算表讀取錯誤：", err));
         }
-        window.onload = function() { loadBusinessData(); };
-    </script>
-</body>
-</html>
+
+        // 網頁
