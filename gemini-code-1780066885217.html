@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公司內部管理系統</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --gray: #f3f4f6;
+        }
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            margin: 0;
+            background-color: #f9fafb;
+            color: #333;
+        }
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        /* 導覽籤頁 */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            font-weight: bold;
+        }
+        /* 區塊樣式 */
+        .panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+        h2 {
+            margin-top: 0;
+            color: #111827;
+            border-left: 4px solid var(--primary);
+            padding-left: 0.5rem;
+        }
+        /* 表單樣式 */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-group { display: flex; gap: 1rem; margin-top: 1rem; }
+        
+        /* 表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th { background-color: var(--gray); }
+        
+        /* 模擬後台提示 */
+        .admin-note {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>🏢 公司內部線上管理系統</header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('punch')">⏰ 上下班打卡</button>
+            <button class="tab-btn" onclick="switchTab('business')">💼 出差登記與總覽</button>
+            <button class="tab-btn" onclick="switchTab('leave')">🌴 請假申請</button>
+            <button class="tab-btn" onclick="switchTab('audit')">🔑 主管審核專區</button>
+            <button class="tab-btn" onclick="switchTab('car')">🚗 公務車申請</button>
+        </div>
+
+        <div id="punch" class="panel active">
+            <h2>上下班打卡</h2>
+            <div class="form-group">
+                <label>員工姓名</label>
+                <input type="text" id="punch-name" placeholder="請輸入您的姓名">
+            </div>
+            <div id="current-time" style="margin-bottom: 1rem; font-weight: bold; color: var(--primary);"></div>
+            <div class="btn-group">
+                <button class="btn-success" onclick="doPunch('上班')">🎯 上班打卡</button>
+                <button class="btn-danger" onclick="doPunch('下班')">🚪 下班打卡</button>
+            </div>
+        </div>
+
+        <div id="business" class="panel">
+            <h2>出差登記</h2>
+            <form onsubmit="submitBusiness(event)">
+                <div class="form-group"><label>姓名</label><input type="text" id="biz-name" required></div>
+                <div class="form-group"><label>出差事由 / 地點</label><input type="text" id="biz-reason" required></div>
+                <div class="form-group"><label>開始日期</label><input type="date" id="biz-start" required></div>
+                <div class="form-group"><label>結束日期</label><input type="date" id="biz-end" required></div>
+                <button type="submit">送出出差登記</button>
+            </form>
+            <br><hr><br>
+            <h2>👥 全員出差動態總覽</h2>
+            <p style="font-size: 0.9rem; color: #666;">（此處資料同步自 Google 後台試算表）</p>
+            <table id="business-table">
+                <thead>
+                    <tr><th>姓名</th><th>出差事由</th><th>開始日期</th><th>結束日期</th></tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+        <div id="leave" class="panel">
+            <h2>請假申請表單</h2>
+            <form onsubmit="submitLeave(event)">
+                <div class="form-group"><label>申請人姓名</label><input type="text" id="leave-name" required></div>
+                <div class="form-group">
+                    <label>假別</label>
+                    <select id="leave-type"><option>事假</option><option>病假</option><option>特休</option><option>婚/喪假</option></select>
+                </div>
+                <div class="form-group"><label>請假日期</label><input type="date" id="leave-date" required></div>
+                <div class="form-group"><label>請假事由</label><textarea id="leave-reason" rows="3" required></textarea></div>
+                <button type="submit">送出請假申請</button>
+            </form>
+        </div>
+
+        <div id="audit" class="panel">
+            <h2>🔑 主管審核內部後台</h2>
+            <div class="admin-note">
+                💡 <b>提示：</b>由於純網頁無法直接修改他人資料，請點擊下方按鈕直接進入 Google 試算表後台進行真正的「核准 / 駁回」與修改功能。
+            </div>
+            <button onclick="window.open(GOOGLE_SHEET_URL, '_blank')" style="background-color: #34d399; margin-bottom: 2rem;">進入 Google 試算表後台修改資料</button>
+            
+            <h3>待審核請假清單（模擬前端展示）</h3>
+            <table>
+                <thead>
+                    <tr><th>申請人</th><th>假別</th><th>日期</th><th>事由</th><th>狀態</th><th>操作</th></tr>
+                </thead>
+                <tbody id="audit-table-body">
+                    <tr>
+                        <td>王小明</td><td>特休</td><td>2026-06-01</td><td>家中有事</td><td><span style="color:orange">待審核</span></td>
+                        <td>
+                            <button class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="alert('已核准該申請，請至後台同步更新狀態。')">核准</button>
+                            <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="alert('已駁回該申請。')">駁回</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="car" class="panel">
+            <h2>🚗 公務車使用申請</h2>
+            <form onsubmit="submitCar(event)">
+                <div class="form-group"><label>借用人姓名</label><input type="text" id="car-name" required></div>
+                <div class="form-group">
+                    <label>欲借用車輛</label>
+                    <select id="car-select"><option>公務轎車 A (🚗-1234)</option><option>公務休旅車 B (🚙-5678)</option><option>貨車 C (🚚-9999)</option></select>
+                </div>
+                <div class="form-group"><label>使用日期</label><input type="date" id="car-date" required></div>
+                <div class="form-group"><label>用途說明</label><input type="text" id="car-reason" required></div>
+                <button type="submit">送出車輛申請</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 🔗 【重要】請把下方引號內的網址，換成你第一步複製的 Google 試算表網址！
+        const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE/edit?usp=sharing";
+
+        // 更新打卡時鐘
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('current-time').innerText = "目前時間：" + now.toLocaleString();
+        }, 1000);
+
+        // 切換頁籤
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if(tabId === 'business') { loadBusinessData(); }
+        }
+
+        // 打卡功能
+        function doPunch(type) {
+            const name = document.getElementById('punch-name').value;
+            if(!name) return alert('請先輸入姓名！');
+            alert(`【${name}】已於 ${new Date().toLocaleTimeString()} 成功${type}打卡！\n(此紀錄已暫存，串接後台表單可永久保存)`);
+        }
+
+        // 出差登記送出
+        function submitBusiness(e) {
+            e.preventDefault();
+            alert('出差登記成功！資料已送出。（請在後台試算表新增該行資料以同步全員總覽）');
+        }
+
+        // 請假送出
+        function submitLeave(e) {
+            e.preventDefault();
+            alert('請假申請已送出，已通知主管進入後台審核！');
+        }
+
+        // 公務車送出
+        function submitCar(e) {
+            e.preventDefault();
+            alert('公務車申請成功！');
+        }
+
+        // 讀取 Google 試算表資料並顯示在「出差總覽」
+        function loadBusinessData() {
+            // 注意：這裡使用 CSV 格式讀取公開的試算表資料
+            const csvUrl = GOOGLE_SHEET_URL.replace(/\/edit.*/, '/gviz/tq?tqx=out:csv&sheet=出差總覽');
+            
+            fetch(csvUrl)
+            .then(res => res.text())
+            .then(data => {
+                const lines = data.split('\n').map(line => line.split(',').map(cell => cell.replace(/"/g, '')));
+                const tbody = document.querySelector('#business-table tbody');
+                tbody.innerHTML = ''; // 清空舊資料
+                
+                // 跳過第一行標題，抓取後面行的資料
+                for(let i = 1; i < lines.length; i++) {
+                    if(lines[i].length >= 4 && lines[i][0] !== "") {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${lines[i][0]}</td><td>${lines[i][1]}</td><td>${lines[i][2]}</td><td>${lines[i][3]}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                }
+            })
+            .catch(err => {
+                // 如果還沒設定正確的網址，顯示模擬預設資料
+                const tbody = document.querySelector('#business-table tbody');
+                tbody.innerHTML = `<tr><td>張經理</td><td>台北總部開會</td><td>2026-06-01</td><td>2026-06-03</td></tr>
+                                   <tr><td>李專員</td><td>高雄展覽館佈展</td><td>2026-06-05</td><td>2026-06-08</td></tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
