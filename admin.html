@@ -19,7 +19,7 @@
             color: var(--text-main);
         }
         header {
-            background-color: #1e293b; /* 主管端使用高級深色調橫條 */
+            background-color: #1e293b;
             color: #ffffff !important;
             padding: 1.2rem;
             text-align: center;
@@ -32,7 +32,6 @@
             margin: 2rem auto;
             padding: 0 1rem;
         }
-        /* 導覽籤頁 */
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -58,7 +57,6 @@
             border-bottom: 3px solid var(--primary);
             font-weight: bold;
         }
-        /* 區塊樣式 */
         .panel {
             background: white;
             padding: 2rem;
@@ -112,7 +110,6 @@
         .btn-primary { background-color: var(--primary); }
         .btn-group { display: flex; gap: 1rem; margin-top: 1rem; }
         
-        /* 表格樣式 */
         table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -153,11 +150,11 @@
 
     <div class="container">
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('punch')">⏰ 上下班打卡</button>
-            <button class="tab-btn" onclick="switchTab('business')">💼 出差登記與總覽</button>
-            <button class="tab-btn" onclick="switchTab('leave')">🌴 請假申請</button>
-            <button class="tab-btn" onclick="switchTab('car')">🚗 公務車申請</button>
-            <button class="tab-btn" onclick="switchTab('audit')" style="color: #ef4444 !important; background-color: #fee2e2; border-radius: 4px;">🔑 主管審核專區</button>
+            <button id="btn-punch" class="tab-btn active" onclick="switchTab('punch', this)">⏰ 上下班打卡</button>
+            <button id="btn-business" class="tab-btn" onclick="switchTab('business', this)">💼 出差登記與總覽</button>
+            <button id="btn-leave" class="tab-btn" onclick="switchTab('leave', this)">🌴 請假申請</button>
+            <button id="btn-car" class="tab-btn" onclick="switchTab('car', this)">🚗 公務車申請</button>
+            <button id="btn-audit" class="tab-btn" onclick="switchTab('audit', this)" style="color: #ef4444 !important; background-color: #fee2e2; border-radius: 4px;">🔑 主管審核專區</button>
         </div>
 
         <div id="punch" class="panel active">
@@ -203,7 +200,7 @@
 
         <div id="leave" class="panel">
             <h2>🌴 請假申請表單</h2>
-            <form onsubmit="event.preventDefault(); alert('請假申請已成功送出，請靜候主管審核！');">
+            <form onsubmit="event.preventDefault(); alert('請假申請已成功送出！');">
                 <div class="form-group"><label>申請人姓名</label><input type="text" id="leave-name" required></div>
                 <div class="form-group">
                     <label>假別</label>
@@ -242,13 +239,13 @@
             <h3>待處理請假動態（模擬前端看板）</h3>
             <table>
                 <thead>
-                    <tr><th>申請人</th><th>假別</th><th>日期</th><th>事由</th><th>狀態</th><th>快捷操作</th></tr>
+                    <tr><th>申請人</th><th>假別</th><th>日期</th><th>事由</th><th>狀態</th><th>操作</th></tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>王小明</td><td>特休</td><td>2026-06-01</td><td>家中有事</td><td><span style="color:#f59e0b; font-weight: bold;">待審核</span></td>
                         <td>
-                            <button class="btn-success" style="padding:4px 12px; font-size:0.85rem;" onclick="alert('已模擬核准！請記得在後台試算表記錄。')">核准</button>
+                            <button class="btn-success" style="padding:4px 12px; font-size:0.85rem;" onclick="alert('已模擬核准！')">核准</button>
                             <button class="btn-danger" style="padding:4px 12px; font-size:0.85rem;" onclick="alert('已駁回該申請。')">駁回</button>
                         </td>
                     </tr>
@@ -260,20 +257,18 @@
     <script>
         const GOOGLE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRAkvGq_ZM5nxqB7oM2A0RYobjs9Cex0b-tzpTxAln5IoKr38iHHv8CywxHV_QjoTfWYHcFzs9JDfvj/pub?tqx=out:csv";
 
-        // 更新右上角時鐘
         setInterval(() => { 
             const now = new Date();
             document.getElementById('current-time').innerText = "目前時間：" + now.toLocaleString(); 
         }, 1000);
 
-        // 分頁切換邏輯
-        function switchTab(tabId) {
+        // 修正後的頁籤切換邏輯，完全移除了不穩定的全局 event
+        function switchTab(tabId, element) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
             
-            // 處理因為 event 傳遞可能產生的問題
-            if (event && event.target) {
-                event.target.classList.add('active');
+            if (element) {
+                element.classList.add('active');
             }
             
             const targetPanel = document.getElementById(tabId);
@@ -284,18 +279,17 @@
             if(tabId === 'business') { loadBusinessData(); }
         }
 
-        // 打卡虛擬回饋
         function doPunch(type) { 
             const name = document.getElementById('punch-name').value;
             if(!name) return alert('請先輸入姓名！');
             alert(`【${name}】已於 ${new Date().toLocaleTimeString()} 成功${type}打卡！`); 
         }
 
-        // 串接並載入出差總覽
         function loadBusinessData() {
             fetch(GOOGLE_CSV_URL).then(res => res.text()).then(data => {
                 const lines = data.split('\n').map(line => line.split(',').map(cell => cell.replace(/"/g, '').trim()));
                 const tbody = document.querySelector('#business-table tbody'); 
+                if (!tbody) return;
                 tbody.innerHTML = ''; 
                 for(let i = 1; i < lines.length; i++) {
                     if(lines[i].length >= 7 && lines[i][1] !== "") {
@@ -307,7 +301,6 @@
             }).catch(err => console.error("資料讀取失敗：", err));
         }
 
-        // 初始化預載
         window.onload = function() { 
             loadBusinessData(); 
         };
